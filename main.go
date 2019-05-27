@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -31,7 +34,42 @@ var wrong int
 // parseProblems reads the problems from the file, line by line
 // sends problems into a channel
 func parseProblems(problems chan Problem, filename string, shuffle bool) {
-
+	// make a Problems buffer
+	buf := make([]Problem, PROBLEMCOUNT)
+	// open the file
+	file, err := os.Open(filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	// scan the file
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		// read comma separate lines
+		line := strings.Split(scanner.Text(), ",")
+		// fist value is the question
+		q := line[0]
+		// convert string answer to integer
+		ans, err := strconv.Atoi(line[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+		// store problem in buffer
+		buf[count] = Problem{q, ans}
+		count++
+	}
+	// shuffle the problems
+	if shuffle {
+		rand.Seed(time.Now().Unix())
+		for i := range buf[:count] {
+			j := rand.Intn(i + 1)
+			buf[i], buf[j] = buf[j], buf[i]
+		}
+	}
+	// send problems over the channel
+	for _, p := range buf[:count] {
+		problems <- p
+	}
 }
 
 //open a channel and consume the problems
@@ -50,7 +88,7 @@ func main() {
 	secondsFl := flag.Int("t", TIMELIMIT, "time to solve the quiz")
 	shuffleFl := flag.Bool("s", false, "shuffle or not the questions")
 	debugFl := flag.Bool("debug", false, "show debug information")
-
+	flag.Parse()
 	// discard debug data if not wanted
 	if !*debugFl {
 		log.SetOutput(ioutil.Discard)
@@ -79,7 +117,7 @@ func main() {
 
 	// show final tally
 	fmt.Printf("\nNumber of questions: %d\n", count)
-	fmt.Printf("Correct answers: %d", correct)
-	fmt.Printf("Incorrect answers: %d", wrong)
+	fmt.Printf("Correct answers: %d\n", correct)
+	fmt.Printf("Incorrect answers: %d\n", wrong)
 
 }
