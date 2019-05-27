@@ -74,7 +74,30 @@ func parseProblems(problems chan Problem, filename string, shuffle bool) {
 
 //open a channel and consume the problems
 func solveProblems(problems chan Problem) {
-
+	// create an IO reader
+	scanner := bufio.NewScanner(os.Stdin)
+	// start consuming problems from the channel
+	for p := range problems {
+		// print problem question
+		fmt.Printf("%s = ", p.q)
+		// scan IO input
+		scanner.Scan()
+		input := strings.Trim(scanner.Text(), " ") // remove white space
+		// convert answer to int
+		ans, err := strconv.Atoi(input)
+		if err != nil {
+			wrong++
+			fmt.Printf("'%s' is not a valid asnwer\n", input)
+			continue
+		} else if ans == p.a {
+			correct++
+			fmt.Printf("Correct!\n")
+		} else {
+			wrong++
+			fmt.Printf("Wrong!\n")
+		}
+	}
+	return
 }
 
 // startTime is a makeshift timer
